@@ -2,7 +2,7 @@ const socketConn = new WebSocket('ws://localhost:8080/txtSocketHandler');
 
 socketConn.onmessage = (e) => {
         showMessage(e.data);
-        //console.log(e);
+        console.log(e);
 }
 
 socketConn.onopen = function() {
