@@ -1,0 +1,12 @@
+*.log
+.DS_Store
+*.ipr
+*.iml
+*.iws
+.idea/
+**/.gradle/
+build/
+*/build/
+node_modules/
+**/app/vendor/
+local-boot.properties
