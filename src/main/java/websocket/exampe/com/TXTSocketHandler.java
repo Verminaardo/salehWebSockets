@@ -20,8 +20,7 @@ public class TXTSocketHandler extends TextWebSocketHandler {
             throws InterruptedException, IOException {
 
         for(WebSocketSession webSocketSession : sessions) {
-            if(webSocketSession.getId().equals(session.getId()))
-                webSocketSession.sendMessage(new TextMessage("echo:" + message.getPayload()));
+            webSocketSession.sendMessage(new TextMessage(session.getId() + ": " + message.getPayload()));
         }
     }
 
