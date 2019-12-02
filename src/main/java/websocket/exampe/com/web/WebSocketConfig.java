@@ -1,4 +1,4 @@
-package websocket.exampe.com;
+package websocket.exampe.com.web;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
