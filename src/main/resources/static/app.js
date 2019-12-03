@@ -1,4 +1,4 @@
-const socketConn = new WebSocket('ws://localhost:8080/txtSocketHandler');
+const socketConn = new WebSocket('ws://62.113.119.225:8080/txtSocketHandler');
 
 socketConn.onmessage = (e) => {
         showMessage(e.data);
