@@ -1,6 +1,5 @@
 package websocket.exampe.com.db.entities;
 
-import com.sun.istack.internal.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -11,6 +10,7 @@ import websocket.exampe.com.db.entities.base.GenericEntity;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Data
