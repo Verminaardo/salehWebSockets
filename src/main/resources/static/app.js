@@ -1,6 +1,7 @@
-socketConn = null;
-USER_NOW = "";
-USER_TO = "";
+$(function () {
+    socketConn = null;
+let USER_NOW = "";
+let USER_TO = "";
 
 
 function Socket() {
@@ -48,7 +49,7 @@ function showMessage(message) {
     $("#messagelist").append("<div>" + message + "</div>");
 }
 
-$(function () {
+
     let sendButton = document.getElementById('send');
     sendButton.disabled=true;
 
@@ -87,8 +88,11 @@ $(function () {
        let result = sendLogins(url);
          console.log(result)
         $('messagelist').html('');
-         result.forEach(el=>{
-             showMessage(el.postingDateTime + " - " + el.fromUser.login + ": " + el.text);
+         result.then(el=>{
+             el.forEach(element =>{
+                 showMessage(element.postingDateTime + " - " + element.fromUser.login + ": " + element.text);
+             })
+
          })
         Socket();
     })
