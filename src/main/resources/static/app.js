@@ -5,7 +5,7 @@ let USER_TO = "";
 
 
 function Socket() {
-    socketConn = new WebSocket('ws://192.168.43.16:8090/txtSocketHandler');
+    socketConn = new WebSocket('localhost://192.168.43.16:8090/txtSocketHandler');
 
     socketConn.onmessage = (e) => {
         showMessage(e.data);
