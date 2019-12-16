@@ -1,36 +1,47 @@
-const socketConn = new WebSocket('ws://192.168.43.16:8090/txtSocketHandler');
+socketConn = null;
+USER_NOW = "";
+USER_TO = "";
 
-socketConn.onmessage = (e) => {
+
+function Socket() {
+    socketConn = new WebSocket('ws://192.168.43.16:8090/txtSocketHandler');
+
+    socketConn.onmessage = (e) => {
         showMessage(e.data);
         console.log(e);
+    }
+
+    socketConn.onopen = function() {
+        alert("Connection established.");
+        sendLodin();
+    };
+
+    socketConn.onclose = function(event) {
+        if (event.wasClean) {
+            alert('Connection closed clean');
+        } else {
+            alert('Disconnection');
+        }
+        alert('Code: ' + event.code + ' reason: ' + event.reason);
+    };
+    ;
+
+    socketConn.onerror = function(error) {
+        alert("error " + error.message);
+    };
 }
-
-socketConn.onopen = function() {
-  alert("Connection established.");
-  var name = prompt("Login?")
-    console.log(name)
-};
-
-socketConn.onclose = function(event) {
-  if (event.wasClean) {
-    alert('Connection closed clean');
-  } else {
-    alert('Disconnection');
-  }
-  alert('Code: ' + event.code + ' reason: ' + event.reason);
-};
-;
-
-socketConn.onerror = function(error) {
-  alert("error " + error.message);
-};
 
 function sendLodin() {
     socketConn.send($("#log").val());
 }
 
 function sendMessage() {
-    socketConn.send($("#msg").val());
+    let messageObject = {
+        from: $("#log").val(),
+        to: USER_TO,
+        message: $("#msg").val()
+    };
+    socketConn.send(JSON.stringify(messageObject));
 }
 
 function showMessage(message) {
@@ -38,25 +49,67 @@ function showMessage(message) {
 }
 
 $(function () {
+    let sendButton = document.getElementById('send');
+    sendButton.disabled=true;
+
     $("form").on('submit', function (e) {
         e.preventDefault();
     });
-    $( "#send" ).click(function() { sendMessage(); });
-
-
-});
+    $( "#send" ).click(function() {
+        debugger
+        sendMessage();
+    });
 
 //нажатие ок
-$('#ok').on('click', function () {
-    debugger
-    url='';
-    login = $('#log').val();
-    console.log((login))
-    // let result = getLogin(url, login)
-})
+    $('#ok').on('click', function () {
+        USER_NOW = $('#log').val();
+       let url = "http://localhost:8090/user/" + USER_NOW + "/getAll"
 
-function getLogin(url, login) {
-   const response = fetch(url+"?login="+login );
-   return response.json();
+        let result = getLogin(url)
+        console.log(result)
+        let sel = document.getElementById('selector');
+        result.then(obj => {
+            for (let i = 0; i < obj.length; i++) {
+                let s = obj[i].login;
+                sel[i] = new Option(s, i)
+            }
+        })
+        sendButton.disabled = false;
+    })
 
+    //список
+    $('#selector').change(function () {
+        let sel = document.getElementById('selector');
+        USER_TO = sel.options[sel.selectedIndex].text;
+        console.log(USER_TO);
+        console.log(USER_NOW);
+        let url = "http://localhost:8090/message/"+USER_NOW+"/"+USER_TO+"/getAll";
+       let result = sendLogins(url);
+         console.log(result)
+        $('messagelist').html('');
+         result.forEach(el=>{
+             showMessage(el.postingDateTime + " - " + el.fromUser.login + ": " + el.text);
+         })
+        Socket();
+    })
+});
+
+function getLogin(url) {
+   return fetch(url,{
+       headers: {
+           'Content-Type': 'application/json',
+           // 'Content-Type': 'application/x-www-form-urlencoded',
+       }
+   }).then(response => response.json());
 }
+
+function sendLogins(url) {
+    return fetch(url,{
+        headers: {
+            'Content-Type': 'application/json',
+            // 'Content-Type': 'application/x-www-form-urlencoded',
+        }
+    }).then(response => response.json());
+}
+
+

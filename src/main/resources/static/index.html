@@ -4,8 +4,9 @@
     <title>Hello WebSocket</title>
     <link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="/main.css" rel="stylesheet">
-    <script src="/app.js"></script>
+
     <script src="/webjars/jquery/jquery.min.js"></script>
+    <script src="/app.js"></script>
 
 </head>
 <body>
@@ -29,16 +30,14 @@
     </div>
     <div class="row">
         <div class="col-md-6">
-            <form class="form-inline mt-3">
+
                 <div class="form-group">
                     <label for="msg">User list: </label>
-                    <select type="select" class="form-control ml-2">
-                        <option value="user1">User1</option>
-                        <option value="user2"/>User2</option>
-                        <option value="user2"/>User3</option>
+                    <select class="form-control ml-2" id="selector" name="selector[]">
+
                     </select>
                 </div>
-            </form>
+
         </div>
     </div>
     <div class="row mt-2">
