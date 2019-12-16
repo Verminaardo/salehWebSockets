@@ -7,6 +7,8 @@ import java.util.List;
 
 public interface UserRepository extends CustomRevisionRepository<User, String> {
 
-    List<User> findUsersByIdIsNotAndOrderByNameAsc(String id);
+    List<User> findUsersByLoginIsNotLikeOrderByLoginAsc(String id);
+
+    User findUserByLogin(String login);
 
 }

@@ -19,6 +19,6 @@ public class User extends GenericEntity {
 
     @Column(name = "name", nullable = false)
     @NotNull
-    private String name;
+    private String login;
 
 }
