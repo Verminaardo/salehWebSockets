@@ -2,6 +2,7 @@ package websocket.exampe.com.db.repo;
 
 import org.springframework.stereotype.Repository;
 import websocket.exampe.com.db.entities.Message;
+import websocket.exampe.com.db.entities.User;
 import websocket.exampe.com.db.repo.common.CustomRevisionRepository;
 
 import java.util.List;
@@ -10,5 +11,7 @@ import java.util.List;
 public interface MessageRepository extends CustomRevisionRepository<Message, String> {
 
     List<Message> findByOrderByPostingDateTimeAsc();
+
+    List<Message> findByFromUserAndToUserAndOrderByPostingDateTimeAsc(User fromUser, User toUser);
 
 }

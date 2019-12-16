@@ -7,9 +7,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.web.SortDefault;
 import websocket.exampe.com.db.entities.base.GenericEntity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
@@ -20,9 +18,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class Message extends GenericEntity {
 
-    @Column(name = "user", nullable = false)
-    @NotNull
-    private String user;
+    @ManyToOne
+    @JoinColumn(name = "from_user_id")
+    private User fromUser;
+
+    @ManyToOne
+    @JoinColumn(name = "to_user_id")
+    private User toUser;
 
     @Column(name = "text", nullable = false)
     @NotNull

@@ -33,12 +33,11 @@ public class TXTSocketHandler extends TextWebSocketHandler {
 
         Message newMessage = new Message();
         newMessage.setText(message.getPayload());
-        newMessage.setUser(username);
         newMessage.setPostingDateTime(LocalDateTime.now());
         messageRepository.save(newMessage);
 
         for(WebSocketSession webSocketSession : sessions) {
-            sendMessage(webSocketSession, username, message.getPayload(), LocalDateTime.now());
+            sendMessage(webSocketSession, "tempTag", message.getPayload(), LocalDateTime.now());
         }
     }
 
@@ -47,7 +46,7 @@ public class TXTSocketHandler extends TextWebSocketHandler {
         sessions.add(session);
         List<Message> messages = messageRepository.findByOrderByPostingDateTimeAsc();
         for(Message message : messages) {
-            sendMessage(session, message.getUser(), message.getText(), message.getPostingDateTime());
+            sendMessage(session, "tempTag", message.getText(), message.getPostingDateTime());
         }
     }
 
