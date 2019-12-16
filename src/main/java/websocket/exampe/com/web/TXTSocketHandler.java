@@ -41,11 +41,12 @@ public class TXTSocketHandler extends TextWebSocketHandler {
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message)
             throws IOException, NotFoundException {
-        if (!sessionExist(session)) {
-            return;
-        }
 
         SocketMessage value = new Gson().fromJson(message.getPayload(), SocketMessage.class);
+
+        if (value.getFrom() != null && sessionIdWithUserLoginMap.containsValue(value.getFrom())) {
+            session.close();
+        }
 
         if (!sessionIdWithUserLoginMap.containsKey(session.getId())) {
             sessionIdWithUserLoginMap.put(session.getId(), value.getFrom());
@@ -82,13 +83,12 @@ public class TXTSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        if (!sessionExist(session)) {
             sessions.add(session);
-        }
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
+        sessionIdWithUserLoginMap.remove(session.getId());
         sessions.remove(session);
     }
 
