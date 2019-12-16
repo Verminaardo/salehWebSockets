@@ -11,9 +11,11 @@ import websocket.exampe.com.db.entities.Message;
 import websocket.exampe.com.db.entities.User;
 import websocket.exampe.com.db.repo.MessageRepository;
 import websocket.exampe.com.db.repo.UserRepository;
+import websocket.exampe.com.web.model.SocketMessage;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
@@ -39,28 +41,37 @@ public class TXTSocketHandler extends TextWebSocketHandler {
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message)
             throws IOException, NotFoundException {
-        Map<String, String> value = new Gson().fromJson(message.getPayload(), Map.class);
-
-        User fromUser = userRepository.findUserByLogin(value.get("from"));
-
-        if(!sessionIdWithUserLoginMap.containsKey(session.getId())) {
-            sessionIdWithUserLoginMap.put(session.getId(), fromUser.getLogin());
+        if (!sessionExist(session)) {
+            return;
         }
 
-        User toUser = userRepository.findUserByLogin(value.get("to"));
+        SocketMessage value = new Gson().fromJson(message.getPayload(), SocketMessage.class);
 
-        if (fromUser == null || toUser == null) {
+        if (!sessionIdWithUserLoginMap.containsKey(session.getId())) {
+            sessionIdWithUserLoginMap.put(session.getId(), value.getFrom());
+            return;
+        }
+
+        User fromUser = userRepository.findUserByLogin(sessionIdWithUserLoginMap.get(session.getId()));
+
+        if (fromUser == null) {
+            throw new NotFoundException("User not found");
+        }
+
+        User toUser = userRepository.findUserByLogin(value.getTo());
+
+        if (toUser == null) {
             throw new NotFoundException("User not found");
         }
 
         Message newMessage = new Message();
         newMessage.setFromUser(fromUser);
         newMessage.setToUser(toUser);
-        newMessage.setText(value.get("message"));
-        newMessage.setPostingDateTime(LocalDateTime.now());
+        newMessage.setText(value.getMessage());
+        newMessage.setPostingDateTime(LocalTime.now());
         messageRepository.save(newMessage);
 
-        WebSocketSession otherSession = sessions.stream().filter((s) -> s.getId().equals(toUser.getLogin())).findFirst().orElse(null);
+        WebSocketSession otherSession = sessions.stream().filter((s) -> sessionIdWithUserLoginMap.get(s.getId()).equals(toUser.getLogin())).findFirst().orElse(null);
 
         if (otherSession != null) {
             sendMessage(otherSession, fromUser.getLogin(), newMessage.getText(), LocalDateTime.now());
@@ -71,16 +82,18 @@ public class TXTSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        sessions.add(session);
-        List<Message> messages = messageRepository.findByOrderByPostingDateTimeAsc();
-        for(Message message : messages) {
-            sendMessage(session, "tempTag", message.getText(), message.getPostingDateTime());
+        if (!sessionExist(session)) {
+            sessions.add(session);
         }
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         sessions.remove(session);
+    }
+
+    private boolean sessionExist(WebSocketSession session) {
+        return sessions.stream().anyMatch(o -> o.getId().equals(session.getId()));
     }
 
     private void sendMessage(WebSocketSession session, String tag, String text, LocalDateTime dateTime) throws IOException {

@@ -11,6 +11,7 @@ import websocket.exampe.com.db.entities.User;
 import websocket.exampe.com.db.repo.MessageRepository;
 import websocket.exampe.com.db.repo.UserRepository;
 
+import java.util.Comparator;
 import java.util.List;
 
 @RestController
@@ -35,7 +36,11 @@ public class MessageController {
             throw new NotFoundException("User not found");
         }
 
-        return messageRepository.findByFromUserAndToUserOrderByPostingDateTimeAsc(fromUser, toUser);
+        List<Message> resultList = messageRepository.findByFromUserIdAndToUserIdOrderByPostingDateTimeAsc(fromUser.getId(), toUser.getId());
+        resultList.addAll(messageRepository.findByFromUserIdAndToUserIdOrderByPostingDateTimeAsc(toUser.getId(), fromUser.getId()));
+        resultList.sort(Comparator.comparing(Message::getPostingDateTime));
+
+        return resultList;
     }
 
 }

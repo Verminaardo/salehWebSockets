@@ -10,6 +10,7 @@ import websocket.exampe.com.db.entities.base.GenericEntity;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Data
 @Entity
@@ -32,6 +33,6 @@ public class Message extends GenericEntity {
 
     @Column(name = "time", nullable = false)
     @NotNull
-    private LocalDateTime postingDateTime;
+    private LocalTime postingDateTime;
 
 }

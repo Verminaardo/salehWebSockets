@@ -12,6 +12,6 @@ public interface MessageRepository extends CustomRevisionRepository<Message, Str
 
     List<Message> findByOrderByPostingDateTimeAsc();
 
-   List<Message> findByFromUserAndToUserOrderByPostingDateTimeAsc(User fromUser, User toUser);
+   List<Message> findByFromUserIdAndToUserIdOrderByPostingDateTimeAsc(String fromUserId, String toUserId);
 
 }
