@@ -1,6 +1,7 @@
 package websocket.exampe.com.web;
 
 import com.google.gson.Gson;
+import javafx.util.Pair;
 import javassist.NotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -12,9 +13,9 @@ import websocket.exampe.com.db.entities.User;
 import websocket.exampe.com.db.repo.MessageRepository;
 import websocket.exampe.com.db.repo.UserRepository;
 import websocket.exampe.com.web.model.SocketMessage;
+import websocket.exampe.com.web.restСontroller.MessageComponent;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -28,14 +29,17 @@ public class TXTSocketHandler extends TextWebSocketHandler {
     //todo: Создать сервисную прослойку и разделить на модули
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
+    private final MessageComponent messageComponent;
 
     private List<WebSocketSession> sessions = new CopyOnWriteArrayList<>();
 
-    private Map<String, String> sessionIdWithUserLoginMap = new HashMap<>();
+    //Мапа хранит активные ID сессии и пару-соединение "от" "кому"
+    private Map<String, Pair<String, String>> sessionIdWithFromToPairMap = new HashMap<>();
 
-    public TXTSocketHandler(MessageRepository messageRepository, UserRepository userRepository) {
+    public TXTSocketHandler(MessageRepository messageRepository, UserRepository userRepository, MessageComponent messageComponent) {
         this.messageRepository = messageRepository;
         this.userRepository = userRepository;
+        this.messageComponent = messageComponent;
     }
 
     @Override
@@ -44,22 +48,35 @@ public class TXTSocketHandler extends TextWebSocketHandler {
 
         SocketMessage value = new Gson().fromJson(message.getPayload(), SocketMessage.class);
 
-        if (value.getFrom() != null && sessionIdWithUserLoginMap.containsValue(value.getFrom())) {
+        //Если такой пользователь уже есть разрываем соединение
+        if (value.getFrom() != null && sessionIdWithFromToPairMap.values().stream().anyMatch(p -> p.getKey().equals(value.getFrom()))) {
             session.close();
-        }
-
-        if (!sessionIdWithUserLoginMap.containsKey(session.getId())) {
-            sessionIdWithUserLoginMap.put(session.getId(), value.getFrom());
             return;
         }
 
-        User fromUser = userRepository.findUserByLogin(sessionIdWithUserLoginMap.get(session.getId()));
+        //Если это первое подключение и пользователя еще нет в мапе - добавляем
+        if (!sessionIdWithFromToPairMap.containsKey(session.getId())) {
+            if (value.getFrom() == null || value.getTo() == null) {
+                session.close();
+                return;
+            }
+            sessionIdWithFromToPairMap.put(session.getId(), new Pair(value.getFrom(), value.getTo()));
+
+            for (Message oldMessage : messageComponent.getAllMessages(value.getFrom(), value.getTo())) {
+                sendMessage(session, oldMessage.getFromUser().getLogin(), oldMessage.getText(), oldMessage.getPostingDateTime());
+            }
+
+            return;
+        }
+
+        //При последующих соединениях идентифицируем пользователя по ID сессии
+        User fromUser = userRepository.findUserByLogin(sessionIdWithFromToPairMap.get(session.getId()).getKey());
 
         if (fromUser == null) {
             throw new NotFoundException("User not found");
         }
 
-        User toUser = userRepository.findUserByLogin(value.getTo());
+        User toUser = userRepository.findUserByLogin(sessionIdWithFromToPairMap.get(session.getId()).getValue());
 
         if (toUser == null) {
             throw new NotFoundException("User not found");
@@ -72,23 +89,29 @@ public class TXTSocketHandler extends TextWebSocketHandler {
         newMessage.setPostingDateTime(LocalTime.now());
         messageRepository.save(newMessage);
 
-        WebSocketSession otherSession = sessions.stream().filter((s) -> sessionIdWithUserLoginMap.get(s.getId()).equals(toUser.getLogin())).findFirst().orElse(null);
+        WebSocketSession otherSession = sessions.stream()
+                .filter((WebSocketSession s) -> {
+                    Pair<String, String> fromToPair = sessionIdWithFromToPairMap.get(s.getId());
+                    //Проверяем следует ли отправлять сообщение пользователю посредствам веб сокета
+                    return fromToPair.getKey().equals(toUser.getLogin()) && fromToPair.getValue().equals(fromUser.getLogin());
+                })
+                .findFirst().orElse(null);
 
         if (otherSession != null) {
-            sendMessage(otherSession, fromUser.getLogin(), newMessage.getText(), LocalDateTime.now());
+            sendMessage(otherSession, fromUser.getLogin(), newMessage.getText(), LocalTime.now());
         }
 
-        sendMessage(session, fromUser.getLogin(), newMessage.getText(), LocalDateTime.now());
+        sendMessage(session, fromUser.getLogin(), newMessage.getText(), LocalTime.now());
     }
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-            sessions.add(session);
+        sessions.add(session);
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
-        sessionIdWithUserLoginMap.remove(session.getId());
+        sessionIdWithFromToPairMap.remove(session.getId());
         sessions.remove(session);
     }
 
@@ -96,7 +119,7 @@ public class TXTSocketHandler extends TextWebSocketHandler {
         return sessions.stream().anyMatch(o -> o.getId().equals(session.getId()));
     }
 
-    private void sendMessage(WebSocketSession session, String tag, String text, LocalDateTime dateTime) throws IOException {
+    private void sendMessage(WebSocketSession session, String tag, String text, LocalTime dateTime) throws IOException {
         String timeFormat = "HH:mm:ss";
         session.sendMessage(new TextMessage(dateTime.format(DateTimeFormatter.ofPattern(timeFormat)) + "    " + tag + ": " + text));
     }

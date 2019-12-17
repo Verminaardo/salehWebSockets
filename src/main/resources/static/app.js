@@ -5,6 +5,7 @@ $(function () {
 
 
    function Socket() {
+      socketConn && socketConn.close();
       socketConn = new WebSocket('ws://localhost:8080/txtSocketHandler');
 
       socketConn.onmessage = (e) => {
@@ -13,14 +14,14 @@ $(function () {
       };
 
       socketConn.onopen = function () {
-         alert("Connection established.");
+         //alert("Connection established.");
          sendLogin();
          sendButton.disabled = false;
       };
 
       socketConn.onclose = function (event) {
          if (event.wasClean) {
-            alert('Connection closed clean');
+            //alert('Connection closed clean');
          } else {
             alert('Disconnection');
          }
@@ -34,14 +35,17 @@ $(function () {
    }
 
    function sendLogin() {
+      debugger
       socketConn.send(JSON.stringify(
-         {from: $("#log").val()})
+         {
+            from: USER_NOW,
+            to: USER_TO
+         })
       );
    }
 
    function sendMessage() {
       let messageObject = {
-         to: USER_TO,
          message: $("#msg").val()
       };
       socketConn.send(JSON.stringify(messageObject));
@@ -89,15 +93,7 @@ $(function () {
       if (USER_TO !== "-") {
          console.log(USER_TO);
          console.log(USER_NOW);
-         let url = "http://localhost:8080/message/" + USER_NOW + "/" + USER_TO + "/getAll";
-         let result = getMessages(url);
-         console.log(result);
-         $('messagelist').innerHTML = "";
-         result.then(el => {
-            el.forEach(element => {
-               showMessage(element.postingDateTime + " - " + element.fromUser.login + ": " + element.text);
-            })
-         });
+         $("messagelist").innerHTML = "";
          Socket();
       }
    })
