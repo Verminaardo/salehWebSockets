@@ -93,7 +93,8 @@ $(function () {
       if (USER_TO !== "-") {
          console.log(USER_TO);
          console.log(USER_NOW);
-         $("messagelist").innerHTML = "";
+         debugger
+         $('#messagelist').empty();
          Socket();
       }
    })
